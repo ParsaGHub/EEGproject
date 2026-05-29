@@ -70,3 +70,32 @@ for _i, _loc in enumerate(_locations):
             'snk_pos': _snk.tolist(),
             'name': f'loc{_i:03d}_deg{_deg:03d}',
         })
+
+if __name__ == "__main__":
+    import csv
+
+    output_file = "dipole_list.csv"
+
+    with open(output_file, mode="w", newline="") as f:
+        writer = csv.writer(f)
+
+        writer.writerow([
+            "name",
+            "r0_x", "r0_y", "r0_z",
+            "p_x", "p_y", "p_z",
+        ])
+
+        for d in dipole_list:
+            src = np.array(d["src_pos"])
+            snk = np.array(d["snk_pos"])
+
+            r0 = 0.5 * (src + snk)
+            p = src - snk
+
+            writer.writerow([
+                d["name"],
+                r0[0], r0[1], r0[2],
+                p[0], p[1], p[2],
+            ])
+
+    print(f"Saved {len(dipole_list)} dipoles to {output_file}")
