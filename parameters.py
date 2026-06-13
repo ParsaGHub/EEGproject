@@ -40,7 +40,7 @@ z_points = (scalp_rad - rad_tol) * np.cos(theta_r)
 ele_coords = np.vstack((x_points, y_points, z_points)).T
 
 # 80 locations sampled uniformly inside the brain, 19 orientations each = 1520 dipoles
-# Orientations sweep y-z plane from radial (0°) to tangential (90°) in 5° steps
+# Orientations are distributed uniformly over the upper hemisphere (all 3D directions)
 _rng = np.random.default_rng(42)
 _n_locations = 80
 _half_len = 0.05
@@ -58,15 +58,29 @@ _locations = np.column_stack([
     _r * _cos_t,
 ])
 
+def _fibonacci_hemisphere(n):
+    """N approximately uniform orientations on the upper unit hemisphere (z >= 0)."""
+    golden = (1.0 + np.sqrt(5.0)) / 2.0
+    i = np.arange(n, dtype=float)
+    cos_theta = 1.0 - i / (n - 1)
+    theta = np.arccos(cos_theta)
+    phi = 2.0 * np.pi * i / golden
+    return np.column_stack([
+        np.sin(theta) * np.cos(phi),
+        np.sin(theta) * np.sin(phi),
+        cos_theta,
+    ])
+
+_n_orientations = 19
+_orientations = _fibonacci_hemisphere(_n_orientations)
+
 dipole_list = []
 for _i, _loc in enumerate(_locations):
-    for _deg in range(0, 91, 5):
-        _alpha = np.deg2rad(_deg)
-        _direction = np.array([0., np.sin(_alpha), np.cos(_alpha)])
+    for _j, _direction in enumerate(_orientations):
         _src = _loc + _half_len * _direction
         _snk = _loc - _half_len * _direction
         dipole_list.append({
             'src_pos': _src.tolist(),
             'snk_pos': _snk.tolist(),
-            'name': f'loc{_i:03d}_deg{_deg:03d}',
+            'name': f'loc{_i:03d}_ori{_j:03d}',
         })
